@@ -39,20 +39,23 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // posicion inicial
+        // Posicion inicial
         transform.position = startPos;
 
         //marcador a 0
+
         score = 0;
 
-        //spawn de recolectables
+        // Spawn de recolectables
+
         for (float coinInstances = 10f; coinInstances >=0; coinInstances -= 1f)
         {
             randomPos = RandomPosition();
             Instantiate(recoletable, randomPos, recoletable.transform.rotation);
         }
 
-        //inicio corrutina
+        //inicio spawn
+
         StartCoroutine("SpawnObstacle");
 
         cameraAudioSource = GameObject.Find("Main Camera").GetComponent<AudioSource>();
@@ -62,15 +65,20 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //movimiento constante
+        // Forward
         transform.Translate(Vector3.forward * Time.deltaTime * speed);
-        //controles
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
-        transform.Rotate(Vector3.up, turnSpeed * Time.deltaTime * horizontalInput);
-        transform.Rotate(Vector3.right, turnSpeed * Time.deltaTime * -verticalInput);
 
-        //limites
+        //Controles
+
+        if (!gameOver)
+        {
+            horizontalInput = Input.GetAxis("Horizontal");
+            verticalInput = Input.GetAxis("Vertical");
+            transform.Rotate(Vector3.up, turnSpeed * Time.deltaTime * horizontalInput);
+            transform.Rotate(Vector3.right, turnSpeed * Time.deltaTime * -verticalInput);
+        }
+        // Limites
+
         if (transform.position.x <= -limX)
         {
             transform.position = new Vector3(-limX, transform.position.y, transform.position.z);
@@ -96,12 +104,16 @@ public class PlayerController : MonoBehaviour
             transform.position = new Vector3(transform.position.x, transform.position.y, limZ);
         }
 
-        
+        if(score == 10)
+        {
+            gameOver = true;
+            Debug.Log($"Puntuacion final:{score}, Has Ganado");
+        }
 
 
         if (Input.GetKeyDown(KeyCode.RightControl))
         {
-            //Disparar
+            // Pium
             Instantiate(projectilePrefab, offset.position, projectilePrefab.transform.rotation = transform.rotation);
 
             playerAudioSource.PlayOneShot(shootClip, 1);
@@ -117,7 +129,8 @@ public class PlayerController : MonoBehaviour
     }
 
 
-    // Genera una posicion aleatoria 
+    // Posicion aleatoria 
+
     public Vector3 RandomPosition()
     {
         return new Vector3(Random.Range(-limX + spawnMargin, limX - spawnMargin), Random.Range(limLowY + spawnMargin, limY - spawnMargin), Random.Range(-limZ + spawnMargin, limZ - spawnMargin));
@@ -131,45 +144,34 @@ public class PlayerController : MonoBehaviour
             randomPos = RandomPosition();
             Instantiate(obstacle, randomPos, recoletable.transform.rotation);
 
+
+         
         }
 
     }
+
+    // Cuando Recoge moneda +1
+
     private void OnCollisionEnter(Collision otherCollider)
     {
         if (!gameOver)
         {
             if (otherCollider.gameObject.CompareTag("Coin"))
             {
-
+                Destroy(otherCollider.gameObject);
+                score = score + 1;
             }
+            // Cuando choca con objeo se termina el juego
+
             else if (otherCollider.gameObject.CompareTag("Obstacle"))
             {
-
+                Destroy(otherCollider.gameObject);
                 gameOver = true;
+                Destroy(gameObject);
+                Debug.Log($"Puntuacion final:{score}");
             }
         }
 
-    }
+    }  
 
-    //recojer monedas
-    private void OnTriggerEnter(Collider otherTrigger)
-    {
-        if (otherTrigger.gameObject.CompareTag("Coin"))
-        {
-            Destroy(otherTrigger.gameObject);
-            score = score + 1;
-        }
-
-    }
-    //game over
-    private void OnCollisionEnter(Collider otherCollider)
-    {
-        if (otherCollider.gameObject.CompareTag("Obstacle"))
-        {
-            Destroy(otherCollider.gameObject);
-            Destroy(gameObject);
-            Debug.Log($"Puntuacion final:{score}");
-        }
-
-    }
 }
